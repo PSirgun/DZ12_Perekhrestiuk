@@ -201,12 +201,12 @@ def decor_func(func):
             return "Not enough arguments"
         except KeyError:
             return "Name not in phone book"
-        # except TypeError:
-        #         return "Too much arguments"
+        except TypeError:
+                return "Too much arguments"
         except ValueError:
             return "Invalid format"
-        # except AttributeError:
-        #     return "Name not in phone book"
+        except AttributeError:
+            return "Name not in phone book"
         except MyError:
             return "Phone already in phone book"
         except MyError2:
