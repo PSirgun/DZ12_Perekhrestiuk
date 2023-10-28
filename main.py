@@ -6,13 +6,11 @@ import pickle
 import re
 
 # class block ----------------------------------------------------------------
-
-class MyError(Exception):
+class MyClassError(Exception):
     pass
 
-class MyError2(Exception):
+class RecordError(Exception):
     pass
-
 
 class Field:
     def __init__(self, value):
@@ -39,32 +37,30 @@ class Phone(Field):
     def value(self, new_value):
         new_value = ''.join(re.findall('\d+', new_value))  
         if len(new_value) != 10 or not new_value.isdigit():
-            raise MyError
+            raise MyClassError
         self._value = new_value
 
     def __str__(self):
         return self._value
 
 class Record:
-    
     def __init__(self, name): 
         self.name = Name(name)
         self.phones = []
         self.birthday = None
         
-
     def add_phone(self, phone):
         if phone not in [p for p in self.phones]:
             self.phones.append(phone)
         else:
-            raise MyError
+            raise MyClassError
     
     def remove_phone(self, phone):
         for p in self.phones:
             if p.value == phone.value:
                 del self.phones[self.phones.index(p)]
             else:
-                raise MyError2
+                raise RecordError
             
     def edit_phone(self, old_phone, new_phone):
         
@@ -88,9 +84,7 @@ class Record:
         next_bd = next_bd.date()
         if next_bd < today:
             next_bd = next_bd.replace(year=today.year + 1)
-        
         days_left = (next_bd - today).days
-
         return days_left
        
     def __str__(self):
@@ -99,20 +93,17 @@ class Record:
 class AddressBook(UserDict):
     def __init__(self):
         super().__init__()
-        self.lines = 2
-
-
-   
+        self.__lines = 2
    
     def add_record(self, contact: Record):
         self.data[contact.name.value] = contact
         self.keys = list(self.data.keys())
-        self.lines = "2"
+
 
     def find(self, name):
         if name:
             return self.data.get(name)
-        return
+        return None
 
     def delete(self, name):
         if name in self.data:
@@ -121,27 +112,13 @@ class AddressBook(UserDict):
     def __iter__(self):
         for contact in self.data:
             yield {"name":self.data[contact].name.value, "phones":self.data[contact].phones, "birthday":self.data[contact].birthday}
-
-    # def __iter__(self):
-    #     self.index = 0
-    #     return self
-
-    # def __next__(self):  
-    #     if self.index < len(self.keys):
-    #         key = self.keys[self.index]
-    #         self.index += 1
-    #         x = {"name":self.data[key].name.value, "phones":self.data[key].phones, "birthday":self.data[key].birthday}
-    #         return x
-    #     else:
-    #         raise StopIteration
     
     def iterator(self, lines):
-        if lines == None:
-            lines = self.lines
+        if lines is None:
+            lines = self.__lines
         else:
-            self.lines = lines
+            self.__lines = lines
         count = 0
-        
         page = []
         for i in phone_book:
             page.append(i)
@@ -185,7 +162,7 @@ class Birthday:
         self._value = new_value
 
     def __repr__(self):
-        return self.value.strftime('%Y-%m-%d')    
+        return self._value.strftime('%Y-%m-%d')    
     
     def __iter__(self):
         yield self._value.strftime('%Y-%m-%d') 
@@ -207,12 +184,11 @@ def decor_func(func):
             return "Invalid format"
         except AttributeError:
             return "Name not in phone book"
-        except MyError:
+        except MyClassError:
             return "Phone already in phone book"
-        except MyError2:
+        except RecordError:
             return "Phone not in phone book"
     return inner
-
 
 def decor_change(func):
     def inner(*args):
@@ -227,7 +203,6 @@ def decor_change(func):
         except AttributeError:
             return "Name not in phone book"
     return inner
-
 #  end decorators block ----------------------------------------------------------------- sub block
 
 @decor_func
@@ -243,14 +218,12 @@ def sub_add(*args):
         phone_book.add_record(contact) 
     return f" Added {name} - {phone} to phone book "
 
-
 @decor_func
 def sub_show(*args):
     for page in phone_book.iterator(int(args[1]) if args else None):
         for line in page:
             print (line)
-        print ('End page \n')    
-            
+        print ('End page \n')       
     return "End phone book"
 
 @decor_func
@@ -264,7 +237,6 @@ def sub_part_show(*args):
             if v and (args[0] in v or any(args[0] in str(value) for value in v)):
                 contact_list.append(data)
                 break
-
     pprint.pprint(contact_list, sort_dicts=False)
     return "ok"
 
@@ -321,21 +293,19 @@ def sub_days_to_bd(*args):
     days = contact.days_to_birthday()
     return f"{days} days to {name}'s birthday"
 
-
-
 OPERATIONS = {
-    sub_days_to_bd : ("bd?",),
-    sub_remove_phone : ("remove phone",),
-    sub_delete : ("delete", ),
-    sub_hello : ("hello",), 
-    sub_change : ("change",),
-    sub_phone : ("phone",),
-    sub_show : ("show all",),
-    sub_add_birthday: ("bd", "birthday"),
     sub_exit: ("good bye", "close", "exit", "."),
-    sub_add : ("add",),
-    sub_part_show : ("search",'find'),
-}
+    sub_days_to_bd: ("bd?",),
+    sub_remove_phone: ("remove phone",),
+    sub_show: ("show all",),
+    sub_hello: ("hello",), 
+    sub_change: ("change",),
+    sub_phone: ("phone",),
+    sub_add_birthday: ("bd", "birthday"),
+    sub_add: ("add",),
+    sub_delete: ("delete",),
+    sub_part_show: ("search",'find')
+    }
 # end sub block -------------------------------------------------------------------------------- func. block
 
 def sanit_name(*args):
@@ -351,7 +321,6 @@ def sanit_name(*args):
     return args
 
 def main():
-    
     phone_book.load_data()
     while True:
         user_input = input(">>> ")
@@ -371,8 +340,9 @@ def main():
         if not command_found:       
             print("Command not found")
 
+
 if __name__ == '__main__':
-    main() 
+    main()
 
 
 
